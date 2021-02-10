@@ -41,7 +41,7 @@ impl SimpleConnection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self, query),
+        skip(self),
         err,
     )]
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
@@ -83,7 +83,10 @@ impl Connection for InstrumentedPgConnection {
         let span = tracing::Span::current();
         span.record("db.name", &info.current_database.as_str());
         span.record("db.version", &info.version.as_str());
-        span.record("net.peer.ip", &format!("{}", info.inet_server_addr).as_str());
+        span.record(
+            "net.peer.ip",
+            &format!("{}", info.inet_server_addr).as_str(),
+        );
         span.record("net.peer.port", &info.inet_server_port);
 
         Ok(InstrumentedPgConnection { inner: conn, info })
@@ -99,7 +102,7 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self, query),
+        skip(self),
         err,
     )]
     fn execute(&self, query: &str) -> QueryResult<usize> {
@@ -117,7 +120,7 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self, source),
+        skip(self),
         err,
     )]
     fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
@@ -141,7 +144,7 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self, source),
+        skip(self),
         err,
     )]
     fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
@@ -163,7 +166,7 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self, source),
+        skip(self),
         err,
     )]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
