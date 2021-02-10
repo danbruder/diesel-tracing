@@ -6,7 +6,7 @@ use diesel::result::{ConnectionError, ConnectionResult, QueryResult};
 use diesel::sql_types::HasSqlType;
 use diesel::RunQueryDsl;
 use diesel::{no_arg_sql_function, select};
-use tracing::{debug, field, instrument};
+use tracing::{debug, field, info, instrument};
 
 // https://www.postgresql.org/docs/12/functions-info.html
 // db.name
@@ -45,7 +45,7 @@ impl SimpleConnection for InstrumentedPgConnection {
         err,
     )]
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        debug!("executing batch query");
+        info!("executing batch query");
         self.inner.batch_execute(query)
     }
 }
@@ -67,10 +67,10 @@ impl Connection for InstrumentedPgConnection {
         err,
     )]
     fn establish(database_url: &str) -> ConnectionResult<InstrumentedPgConnection> {
-        debug!("establishing postgresql connection");
+        info!("establishing postgresql connection");
         let conn = PgConnection::establish(database_url)?;
 
-        debug!("querying postgresql connection information");
+        info!("querying postgresql connection information");
         let info: PgConnectionInfo = select((
             current_database,
             inet_server_addr,
@@ -106,7 +106,7 @@ impl Connection for InstrumentedPgConnection {
         err,
     )]
     fn execute(&self, query: &str) -> QueryResult<usize> {
-        debug!("executing query");
+        info!("executing query");
         self.inner.execute(query)
     }
 
@@ -120,7 +120,7 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self),
+        skip(self, source),
         err,
     )]
     fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
@@ -130,7 +130,6 @@ impl Connection for InstrumentedPgConnection {
         Pg: HasSqlType<T::SqlType>,
         U: Queryable<T::SqlType, Pg>,
     {
-        debug!("querying by index");
         self.inner.query_by_index(source)
     }
 
@@ -144,7 +143,7 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self),
+        skip(self, source),
         err,
     )]
     fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
@@ -166,14 +165,14 @@ impl Connection for InstrumentedPgConnection {
             net.peer.ip=%self.info.inet_server_addr,
             net.peer.port=%self.info.inet_server_port,
         ),
-        skip(self),
+        skip(self, source),
         err,
     )]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,
     {
-        debug!("executing returning count");
+        info!("executing returning count");
         self.inner.execute_returning_count(source)
     }
 
@@ -190,7 +189,7 @@ impl Connection for InstrumentedPgConnection {
         skip(self),
     )]
     fn transaction_manager(&self) -> &Self::TransactionManager {
-        debug!("retrieving transaction manager");
+        info!("retrieving transaction manager");
         &self.inner.transaction_manager()
     }
 }
@@ -208,7 +207,7 @@ impl InstrumentedPgConnection {
         skip(self),
     )]
     pub fn build_transaction(&self) -> TransactionBuilder {
-        debug!("starting transaction builder");
+        info!("starting transaction builder");
         self.inner.build_transaction()
     }
 }
